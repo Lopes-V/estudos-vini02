@@ -1,0 +1,25 @@
+version: '2.4' # Define a versão da sintaxe do arquivo Docker Compose. 
+               # A versão afeta quais recursos (como limites de CPU/Memória) estão disponíveis.
+
+services: # Inicia a seção onde definimos os contêineres (serviços) que vamos rodar.
+  
+  db: # O nome do serviço. Outros contêineres na mesma rede podem acessar este banco chamando-o de "db".
+    image: mysql # A imagem que será usada (baixada do Docker Hub).
+                 # Como não tem tag (ex: mysql:5.7), ele baixará a versão 'latest' (mais recente).
+    
+    container_name: mysql-2 # Define um nome fixo para o contêiner.
+                          # Sem isso, o Docker gera um nome automático (ex: pasta_db_1).
+    
+    environment: # Define variáveis de ambiente dentro do contêiner.
+      MYSQL_ROOT_PASSWORD: root # Obrigatório para a imagem oficial do MySQL. Define a senha do usuário 'root'.
+    
+    ports: # Faz o mapeamento de portas (Port Forwarding).
+      - "3306:3306" # "Porta do seu Computador (Host) : Porta dentro do Contêiner".
+                    # Permite que você conecte no banco usando ferramentas como Workbench ou DBeaver via localhost:3306.
+    
+    volumes: # Configura a persistência dos dados.
+      - db_data:/var/lib/mysql # Mapeia um volume nomeado ('db_data') para a pasta onde o MySQL salva os dados internamente.
+                               # Isso garante que, se você deletar o contêiner, os dados do banco NÃO sejam perdidos.
+
+volumes: # Seção global para declarar volumes nomeados.
+  db_data: # Cria o volume 'db_data' gerenciado pelo Docker, usado pelo serviço acima.
