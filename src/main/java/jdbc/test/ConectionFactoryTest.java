@@ -21,7 +21,10 @@ public class ConectionFactoryTest {
                     4 --> print all producers
                     5 --> find by producer name
                     6 --> find by producer id
-                    7 --> quit
+                    7 --> show producer meta data
+                    8--> show producer meta driver
+                    9 --> show type scroll
+                    10 --> quit
                     """);
             int e = sc.nextInt();
             switch (e) {
@@ -72,6 +75,18 @@ public class ConectionFactoryTest {
                     break;
                 }
                 case 7: {
+                    ProducerRepository.showProducerMetaData();
+                    break;
+                }
+                case 8: {
+                    ProducerRepository.showDriverMetaData();
+                    break;
+                }
+                case 9: {
+                    ProducerRepository.showTypeScrollWorking();
+                    break;
+                }
+                case 10: {
                     System.out.println("Bye");
                     System.exit(0);
                 }
