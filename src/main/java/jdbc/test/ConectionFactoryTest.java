@@ -24,7 +24,10 @@ public class ConectionFactoryTest {
                     7 --> show producer meta data
                     8--> show producer meta driver
                     9 --> show type scroll
-                    10 --> quit
+                    10 --> find by name and Update to upper case
+                    11 --> find by name and insert when not found
+                    12 --> execute producer count function
+                    13 --> quit
                     """);
             int e = sc.nextInt();
             switch (e) {
@@ -87,6 +90,25 @@ public class ConectionFactoryTest {
                     break;
                 }
                 case 10: {
+                    ProducerRepository.findAndPrintAll();
+                    System.out.println("Enter producer name");
+                    String name = sc.next();
+                    ProducerRepository.findByNameAndUpdate(name);
+                    break;
+                }
+                case 11: {
+                    ProducerRepository.findAndPrintAll();
+                    System.out.println("Enter producer name");
+                    String name = sc.next();
+                    ProducerRepository.findByNameAndInsertWhenNotFound(name);
+                    break;
+                }
+                case 12: {
+                    System.out.println("Enter producer name");
+                    String name = sc.next();
+                    ProducerRepository.executeProducerCountFunction(name);
+                }
+                case 13: {
                     System.out.println("Bye");
                     System.exit(0);
                 }

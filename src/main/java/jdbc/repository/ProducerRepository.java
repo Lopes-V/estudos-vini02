@@ -235,30 +235,142 @@ public class ProducerRepository {
         String sql = "SELECT * FROM producer;";
 
         try (Connection conn = ConectionFactory.getConnection();
-             Statement ps = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
+             PreparedStatement ps = conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
             // Adiciona o wildcard '%' ao valor (seguro)
             ResultSet rs = ps.executeQuery(sql);
+            // ----------------------------------------------------------------------
+            // NAVEGAÇÃO
+
+            // Move o cursor para a primeira linha de dados. Retorna true se bem-sucedido.
             log.info("First row?: "+rs.first());
             log.info("Number row -->: "+rs.getRow());
+            // Imprime os dados da linha atual (Primeira linha).
             log.info(Producer.builder().id(rs.getInt("id_producer")).name(rs.getString("name")).build().toString());
             log.info("-------------------------------------------------");
+
+            // Move o cursor para a última linha de dados. Retorna true se bem-sucedido.
             log.info("Last row?: "+rs.last());
             log.info("Number row -->: "+rs.getRow());
+            // Imprime os dados da linha atual (Última linha).
             log.info(Producer.builder().id(rs.getInt("id_producer")).name(rs.getString("name")).build().toString());
             log.info("-----------------------------------");
+
+            // Move o cursor para a linha de número 1 (novamente a primeira linha).
+            // A contagem começa em 1.
             log.info("Row absolute?: "+rs.absolute(1));
             log.info("Number row -->: "+rs.getRow());
+            // Imprime os dados da linha 1.
             log.info(Producer.builder().id(rs.getInt("id_producer")).name(rs.getString("name")).build().toString());
             log.info("---------------------------------------------");
+
+            // Move o cursor 1 posição adiante em relação à posição atual (linha 1 + 1 = linha 2).
             log.info("Row relative ?: "+rs.relative(1));
             log.info("Number row -->: "+rs.getRow());
+            // Imprime os dados da linha 2.
             log.info(Producer.builder().id(rs.getInt("id_producer")).name(rs.getString("name")).build().toString());
             log.info("---------------------------------------------");
-            log.info("is first?'{}'", rs.first());
-            log.info("isLast?'{}'", rs.last());
 
+            // ----------------------------------------------------------------------
+            // VERIFICAÇÃO DE POSIÇÃO
+
+            // Tenta ir para a primeira linha novamente. Se o cursor já estiver na linha 1,
+            // o retorno será true (mas o cursor não se move).
+            log.info("is first?'{}'", rs.first());
+
+            // Tenta ir para a última linha. Move o cursor e retorna true.
+            log.info("isLast?'{}'", rs.last());
         } catch (SQLException e) {
             log.error("Error while find all producers");
+        }
+    }
+
+    public static List<Producer> findByNameAndUpdate(String name) {
+        // Usa o LIKE com placeholder (o '%' deve ser adicionado ao dado, não na query)
+        String sql = "SELECT * FROM producer WHERE name LIKE ?;";
+        List<Producer> producers = new ArrayList<>();
+
+        try (Connection conn = ConectionFactory.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)){
+            ps.setString(1,"%"+name+"%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    rs.updateString("name",rs.getString("name").toUpperCase());
+                    rs.updateRow();
+                    Producer producer = Producer.builder()
+                            .id(rs.getInt("id_producer"))
+                            .name(rs.getString("name"))
+                            .build();
+                    producers.add(producer);
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error while searching producer by name: {}", name, e);
+        }
+
+        System.out.printf("Found %d producers matching '%s'%n", producers.size(), name);
+        producers.forEach(p -> System.out.println(p)); // Assume que o toString do Producer é útil
+        System.out.println("------------------------------------");
+        return producers;
+    }
+
+    public static List<Producer> findByNameAndInsertWhenNotFound(String name) {
+        // Usa o LIKE com placeholder (o '%' deve ser adicionado ao dado, não na query)
+        String sql = "SELECT * FROM producer WHERE name LIKE ?;";
+        List<Producer> producers = new ArrayList<>();
+
+        try (Connection conn = ConectionFactory.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)){
+            ps.setString(1,"%"+name+"%");
+            ResultSet rs = ps.executeQuery();
+            if(rs.next()) return producers;
+            rs.moveToInsertRow();
+            rs.updateString("name",name);
+            rs.insertRow();
+            rs.next();
+            producers.add(Producer.builder()
+                    .id(rs.getInt("id_producer"))
+                    .name(rs.getString("name"))
+                    .build());
+        } catch (SQLException e) {
+            log.error("Error while searching producer by name: {}", name, e);
+        }
+        return producers;
+    }
+
+    public static void executeProducerCountFunction(String nameToSearch) {
+
+        // A chamada da função/procedure usa a sintaxe especial:
+        // {? = call nome_da_funcao(?)}
+        // O primeiro '?' é para o valor de retorno. O segundo '?' é o parâmetro de entrada.
+        String sql = "{? = call get_producer_count(?)}";
+
+        try (Connection conn = ConectionFactory.getConnection();
+             // 1. Cria o CallableStatement
+             CallableStatement cs = conn.prepareCall(sql)) {
+
+            // --- Configuração dos Parâmetros ---
+
+            // 2. Registra o Parâmetro de RETORNO
+            // O índice 1 é o primeiro '?', que é o valor que a função retornará (BIGINT)
+            cs.registerOutParameter(1, Types.BIGINT);
+
+            // 3. Define o Parâmetro de ENTRADA
+            // O índice 2 é o segundo '?', que é a string de busca que a função usa
+            cs.setString(2, nameToSearch);
+
+            // --- Execução ---
+
+            // 4. Executa o procedimento (não usa executeQuery/Update)
+            cs.execute();
+
+            // 5. Recupera o valor de RETORNO
+            long count = cs.getLong(1);
+
+            log.info("Consulta para '{}' finalizada com sucesso.", nameToSearch);
+            log.info("Total de produtores encontrados: {}", count);
+
+        } catch (SQLException e) {
+            log.error("Erro ao executar a função/procedure do banco de dados.", e);
         }
     }
 }
