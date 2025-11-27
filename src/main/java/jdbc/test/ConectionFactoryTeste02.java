@@ -36,7 +36,6 @@ public class ConectionFactoryTeste02 {
                 System.out.println("enter producer id");
                 int id = sc.nextInt();
                 ProducerRepositoryRowSet.updateJdbcRowSet(Producer.builder().id(id).name(name).build());
-                break;
             }
         }
     }
