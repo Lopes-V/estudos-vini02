@@ -6,10 +6,13 @@ import jdbc.listener.CustomRowSetListener;
 import org.postgresql.core.ConnectionFactory;
 
 import javax.sql.RowSetListener;
+import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.JdbcRowSet;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class ProducerRepositoryRowSet {
     public static List<Producer> findByNameJdbcRowSet(String name) {
@@ -47,4 +50,27 @@ public class ProducerRepositoryRowSet {
             e.printStackTrace();
         }
     }
+
+    public static void updateCachedRowSet(Producer producer) {
+        String sql = "SELECT * FROM producer WHERE id_producer = ?;";
+        try (CachedRowSet crs = ConectionFactory.getCachedRowSet()) {
+            Connection conection = ConectionFactory.getConnection();
+            conection.setAutoCommit(false);
+            crs.addRowSetListener(new CustomRowSetListener());
+            crs.setCommand(sql);
+            crs.setInt(1, producer.getId());
+            crs.execute(conection);
+            if(!crs.next()) return;
+            crs.updateString(1, producer.getName());
+            crs.updateRow();
+            TimeUnit.SECONDS.sleep(10);
+            crs.acceptChanges();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 }

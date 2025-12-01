@@ -373,4 +373,27 @@ public class ProducerRepository {
             log.error("Erro ao executar a função/procedure do banco de dados.", e);
         }
     }
+
+    public static void saveTransaction(List<Producer> producers){
+        // Usa o placeholder '?' para o valor
+
+        try (Connection conn = ConectionFactory.getConnection()){
+             // 1. Cria o PreparedStatement
+             prepareStatementSaveTransaction(conn,producers);
+        } catch (SQLException e) {
+            log.error("Error while inserting producer ");
+        }
+    }
+    public static void prepareStatementSaveTransaction(Connection conn, List<Producer> producers) throws SQLException {
+        String sql = "INSERT INTO producer (name) VALUES (?);";
+        for(Producer p : producers){
+            try(PreparedStatement ps = conn.prepareStatement(sql)){
+                log.info("saving producer '{}'",p.getName());
+                ps.setString(1,p.getName());
+                ps.execute();
+            }catch (SQLException e){
+                e.printStackTrace();
+            }
+        }
+    }
 }

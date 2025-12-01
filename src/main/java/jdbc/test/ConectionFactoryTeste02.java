@@ -16,7 +16,8 @@ public class ConectionFactoryTeste02 {
         System.out.println("""
                 1 --> find by name
                 2 --> update
-                3 --> quit
+                3 --> update cached row set
+                4 --> quit
                 """);
         int escolha = sc.nextInt();
         switch (escolha) {
@@ -36,6 +37,20 @@ public class ConectionFactoryTeste02 {
                 System.out.println("enter producer id");
                 int id = sc.nextInt();
                 ProducerRepositoryRowSet.updateJdbcRowSet(Producer.builder().id(id).name(name).build());
+            }
+            case 3:{
+                ProducerRepository.findAndPrintAll();
+                System.out.println("enter producer name");
+                String name = sc.next();
+                System.out.println("enter producer id");
+                int id = sc.nextInt();
+                ProducerRepositoryRowSet.updateCachedRowSet(Producer.builder().id(id).name(name).build());
+                break;
+            }
+            case 4:{
+                System.out.println("bye");
+                System.exit(0);
+                break;
             }
         }
     }
