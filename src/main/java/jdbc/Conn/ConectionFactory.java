@@ -8,22 +8,27 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class ConectionFactory {
-    public static Connection getConnection() throws SQLException {
-        String url = "jdbc:postgresql://aws-1-us-east-2.pooler.supabase.com:6543/postgres";
-        String user = "postgres.kndxwsntnhspxtwuwtdp";
-        String password = "L6Ip2meYf4ylDJ6f";
-        return DriverManager.getConnection(url,user,password);
+    // Credenciais vêm de variáveis de ambiente: DB_URL, DB_USER e DB_PASSWORD.
+    private static String env(String nome) {
+        String valor = System.getenv(nome);
+        if (valor == null || valor.isBlank()) {
+            throw new IllegalStateException("Variável de ambiente ausente: " + nome);
+        }
+        return valor;
     }
+
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(env("DB_URL"), env("DB_USER"), env("DB_PASSWORD"));
+    }
+
     public static JdbcRowSet getJdbcRowSet() throws SQLException {
-        String url = "jdbc:postgresql://aws-1-us-east-2.pooler.supabase.com:6543/postgres";
-        String user = "postgres.kndxwsntnhspxtwuwtdp";
-        String password = "L6Ip2meYf4ylDJ6f";
         JdbcRowSet jdbcRowSet = RowSetProvider.newFactory().createJdbcRowSet();
-        jdbcRowSet.setUrl(url);
-        jdbcRowSet.setUsername(user);
-        jdbcRowSet.setPassword(password);
+        jdbcRowSet.setUrl(env("DB_URL"));
+        jdbcRowSet.setUsername(env("DB_USER"));
+        jdbcRowSet.setPassword(env("DB_PASSWORD"));
         return jdbcRowSet;
     }
+
     public static CachedRowSet getCachedRowSet() throws SQLException {
         return RowSetProvider.newFactory().createCachedRowSet();
     }
